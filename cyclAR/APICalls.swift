@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import CoreLocation
+
 
 enum APIError: Error { case invalidURL, noRoutes, network(String), parse }
 
@@ -13,26 +15,114 @@ final class APICalls {
     static let instance = APICalls()
         private init() {}
 
-        private let apiKey = "AIzaSyCXnwGuOA7xHRd6cvI5hOWdd-iht_40M_Q"
+        private let apiKey = "AIzaSyBxx6kKdIokfsmPvm3eV9EWoHFpaMGwiWM"
+    
+    // Addy to addy
+    func getBikeDirections(origin: String, destination: String,
+                                   completion: @escaping (Result<[DirectionStep], Error>) -> Void) {
 
-        func getBikeDirections(origin: String, destination: String,
+                let url = URL(string: "https://routes.googleapis.com/directions/v2:computeRoutes")!
+                
+                // Request body for Routes API
+                let body: [String: Any] = [
+                    "origin": [
+                        "address": origin
+                    ],
+                    "destination": [
+                        "address": destination
+                    ],
+                    "travelMode": "BICYCLE",
+                    // tells API what to return
+                    "extraComputations": ["HTML_FORMATTED_NAVIGATION_INSTRUCTIONS"],
+                    "languageCode": "en-US"
+                ]
+
+                // Encode body
+                guard let jsonData = try? JSONSerialization.data(withJSONObject: body) else {
+                    completion(.failure(APIError.parse))
+                    return
+                }
+
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.httpBody = jsonData
+                request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.addValue(apiKey, forHTTPHeaderField: "X-Goog-Api-Key")
+                request.addValue(
+                    "routes.legs.steps.navigationInstruction,routes.legs.steps.distanceMeters",
+                    forHTTPHeaderField: "X-Goog-FieldMask"
+                )
+
+
+                let task = URLSession.shared.dataTask(with: request) { data, resp, err in
+                    if let err = err { return completion(.failure(APIError.network(err.localizedDescription))) }
+                    guard let data = data else { return completion(.failure(APIError.network("no data"))) }
+
+                    do {
+                        // Debug: print raw JSON
+                        print(String(data: data, encoding: .utf8) ?? "no utf8")
+
+                        guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+                              let routes = root["routes"] as? [[String: Any]],
+                              let firstRoute = routes.first,
+                              let legs = firstRoute["legs"] as? [[String: Any]],
+                              let firstLeg = legs.first,
+                              let steps = firstLeg["steps"] as? [[String: Any]] else {
+                            return completion(.failure(APIError.noRoutes))
+                        }
+
+                        let mapped: [DirectionStep] = steps.compactMap { step in
+                            let nav = step["navigationInstruction"] as? [String: Any]
+                            let html = (nav?["instructions"] as? String) ?? ""
+                            let plain = Self.stripHTML(html)
+
+                            let maneuver = (nav?["maneuver"] as? String) ?? "STRAIGHT"
+                            let simple = Self.reduceToLRS(from: maneuver, fallback: plain)
+
+                            let meters = step["distanceMeters"] as? Double ?? 0
+                            let distanceText = Self.formatDistance(meters)
+
+                            return DirectionStep(
+                                rawInstruction: plain,
+                                maneuver: maneuver,
+                                simple: simple,
+                                distanceText: distanceText
+                            )
+                        }
+
+                        completion(.success(mapped))
+                    } catch {
+                        completion(.failure(APIError.parse))
+                    }
+                }
+
+                task.resume()
+            }
+
+    // LIVE
+    func getBikeDirections(origin: CLLocationCoordinate2D,
+                               destination: String,
                                completion: @escaping (Result<[DirectionStep], Error>) -> Void) {
-
-            let url = URL(string: "https://routes.googleapis.com/directions/v2:computeRoutes")!
             
-            // Request body for Routes API
+            let url = URL(string: "https://routes.googleapis.com/directions/v2:computeRoutes")!
+
             let body: [String: Any] = [
                 "origin": [
-                    "address": origin
+                    "location": [
+                        "latLng": [
+                            "latitude": origin.latitude,
+                            "longitude": origin.longitude
+                        ]
+                    ]
                 ],
                 "destination": [
                     "address": destination
                 ],
                 "travelMode": "BICYCLE",
-                // tells API what to return
                 "extraComputations": ["HTML_FORMATTED_NAVIGATION_INSTRUCTIONS"],
                 "languageCode": "en-US"
             ]
+
 
             // Encode body
             guard let jsonData = try? JSONSerialization.data(withJSONObject: body) else {
