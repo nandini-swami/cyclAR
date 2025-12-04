@@ -35,9 +35,22 @@
 		9210D9B72EBAA50400DAFDDD /* cyclARUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cyclARUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		92A9A1C82EE1DB6C0064B21A /* Exceptions for "cyclAR" folder in "cyclAR" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9210D99C2EBAA50200DAFDDD /* cyclAR */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9210D99F2EBAA50200DAFDDD /* cyclAR */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				92A9A1C82EE1DB6C0064B21A /* Exceptions for "cyclAR" folder in "cyclAR" target */,
+			);
 			path = cyclAR;
 			sourceTree = "<group>";
 		};
@@ -415,6 +428,9 @@
 				DEVELOPMENT_TEAM = 6C76458TPM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = cyclAR/Info.plist;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Used to connect to your cycling microcontroller for turn-by-turn directions.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "CyclAR needs to connect to your ESP32 bike signal.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app provides live cycling navigation that requires continuous location updates.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location to provide bike navigation.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -446,6 +462,9 @@
 				DEVELOPMENT_TEAM = 6C76458TPM;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = cyclAR/Info.plist;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Used to connect to your cycling microcontroller for turn-by-turn directions.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "CyclAR needs to connect to your ESP32 bike signal.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app provides live cycling navigation that requires continuous location updates.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app needs your location to provide bike navigation.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
