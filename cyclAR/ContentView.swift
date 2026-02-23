@@ -31,7 +31,7 @@ struct ContentView: View {
                 
                 // --- NEW TEST SECTION ---
                 VStack {
-                    Text("ESP32 IP: 10.103.207.13") // Reminding you of the IP
+                    Text("ESP32 IP: 103.212.168") // Reminding you of the IP
                                             .font(.caption2)
                                             .foregroundColor(.gray)
                                         

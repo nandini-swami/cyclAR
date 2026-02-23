@@ -15,7 +15,7 @@ final class APICalls {
     static let instance = APICalls()
         private init() {}
 
-        private let apiKey = "-"
+        private let apiKey = "AIzaSyD9MeMxz_se6k68BnoQdTNLEY4yf_E4xa4"
     
     // Addy to addy
     func getBikeDirections(origin: String, destination: String,
@@ -217,7 +217,7 @@ final class APICalls {
     }
     
     func sendDataToESP32(message: String, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let url = URL(string: "http://10.103.207.13/command") else {
+        guard let url = URL(string: "http://172.20.10.3/command") else {
             return completion(.failure(APIError.invalidURL))
         }
         
