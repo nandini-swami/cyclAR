@@ -15,7 +15,7 @@ final class APICalls {
     static let instance = APICalls()
         private init() {}
         var espIP: String = "10.103.214.102"
-        private let apiKey = ""
+        private let apiKey = "AIzaSyD9MeMxz_se6k68BnoQdTNLEY4yf_E4xa4"
     
     // Addy to addy
     func getBikeDirections(origin: String, destination: String,
@@ -81,12 +81,22 @@ final class APICalls {
 
                             let meters = step["distanceMeters"] as? Double ?? 0
                             let distanceText = Self.formatDistance(meters)
+                            
+                            let streetName = Self.extractStreetName(from: plain)
+                            
+                            print("STEP DEBUG")
+                            print("  maneuver: \(maneuver)")
+                            print("  simple: \(simple)")
+                            print("  instruction: \(plain)")
+                            print("  street: \(streetName)")
+                            print("  distance: \(distanceText)")
 
                             return DirectionStep(
                                 rawInstruction: plain,
                                 maneuver: maneuver,
                                 simple: simple,
-                                distanceText: distanceText
+                                distanceText: distanceText,
+                                streetName: streetName
                             )
                         }
 
@@ -168,12 +178,14 @@ final class APICalls {
 
                         let meters = step["distanceMeters"] as? Double ?? 0
                         let distanceText = Self.formatDistance(meters)
+                        let streetName = Self.extractStreetName(from: plain)
 
                         return DirectionStep(
                             rawInstruction: plain,
                             maneuver: maneuver,
                             simple: simple,
-                            distanceText: distanceText
+                            distanceText: distanceText,
+                            streetName: streetName
                         )
                     }
 
@@ -185,6 +197,30 @@ final class APICalls {
 
             task.resume()
         }
+    
+    private static func extractStreetName(from instruction: String) -> String {
+        let lower = instruction.lowercased()
+
+        if let range = lower.range(of: " onto ") {
+            return String(instruction[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if let range = lower.range(of: " on ") {
+            let afterOn = String(instruction[range.upperBound...])
+
+            if let towardRange = afterOn.lowercased().range(of: " toward ") {
+                return String(afterOn[..<towardRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+
+            if let destRange = afterOn.lowercased().range(of: " destination ") {
+                return String(afterOn[..<destRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+
+            return afterOn.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        return ""
+    }
 
 
     // Reduce Google maneuver to LEFT / RIGHT / STRAIGHT

@@ -1,13 +1,5 @@
 import SwiftUI
 
-struct DirectionStep: Identifiable {
-    let id = UUID()
-    let rawInstruction: String
-    let maneuver: String
-    let simple: String
-    let distanceText: String
-}
-
 struct ContentView: View {
     @State private var origin = "Houston Hall, Philadelphia"
     @State private var destination = "Penn Museum, Philadelphia"
@@ -16,69 +8,38 @@ struct ContentView: View {
     @StateObject private var loc = LocationManager()
     @State private var liveMode = false
     @State private var navTimer: Timer?
-    
+
     @State private var connectionStatus = "Not Connected"
-    
-    // --- VARIABLES FOR SIMULATION ---
-        @State private var demoTimer: Timer?
-        @State private var currentStepIndex = 0
-        @State private var isSimulating = false
-        // ------------------------------------
+
+    @State private var demoTimer: Timer?
+    @State private var currentStepIndex = 0
+    @State private var isSimulating = false
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                
-                // --- NEW TEST SECTION ---
-                VStack {
-                    Text("ESP32 IP: \(APICalls.instance.espIP)") // Reminding you of the IP
-                                            .font(.caption2)
-                                            .foregroundColor(.gray)
-                                        
-                Text("Status: \(connectionStatus)")
-                    .font(.caption)
-                    .foregroundColor(connectionStatus.contains("Success") ? .green : .gray)
-                    .padding(.bottom, 5)
-                    
-                    Button("Turn left") {
-                        sendLeft()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.green)
-            
-                    Button("Turn right") {
-                        sendRight()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.green)
-                
-                    Button("Go Straight") {
-                        sendUp()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.green)
-                }
-                .padding(.bottom, 20)
-                
+                ESPControlPanel(
+                    espIP: APICalls.instance.espIP,
+                    connectionStatus: connectionStatus,
+                    onLeft: sendLeft,
+                    onRight: sendRight,
+                    onUp: sendUp
+                )
 
-                // Toggle Mode
                 Toggle("Live Navigation", isOn: $liveMode)
                     .padding(.horizontal)
                     .onChange(of: liveMode) { isOn in
-                            if !isOn {
-                                navTimer?.invalidate()
-                                navTimer = nil
-                                errorMsg = nil
-                            } else {
-                                // Stop sim if live nav starts
-                                stopSimulation()
-                            }
+                        if !isOn {
+                            navTimer?.invalidate()
+                            navTimer = nil
+                            errorMsg = nil
+                        } else {
+                            stopSimulation()
                         }
+                    }
 
                 VStack(spacing: 12) {
-
-                    // Show fields depending on mode
-                    if liveMode == false {
+                    if !liveMode {
                         TextField("Start", text: $origin)
                             .textFieldStyle(.roundedBorder)
                     }
@@ -86,16 +47,6 @@ struct ContentView: View {
                     TextField("Destination", text: $destination)
                         .textFieldStyle(.roundedBorder)
 
-//                    Button(liveMode ? "Start Live Navigation" : "Get Route Preview") {
-//                        if liveMode {
-//                            startLiveNavigation()
-//                        } else {
-//                            previewRoute()
-//                        }
-//                    }
-//                    .buttonStyle(.borderedProminent)
-                    
-                    // --- ACTION BUTTONS ---
                     HStack {
                         Button(liveMode ? "Start Live Navigation" : "Get Route Preview") {
                             if liveMode {
@@ -105,9 +56,8 @@ struct ContentView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(isSimulating) // Disable main button while simulating
-                        
-                        // --- SIMULATE BUTTON (Only in Preview Mode & has steps) ---
+                        .disabled(isSimulating)
+
                         if !liveMode && !steps.isEmpty {
                             Button(isSimulating ? "Stop Sim" : "Send to Display") {
                                 if isSimulating {
@@ -120,7 +70,7 @@ struct ContentView: View {
                             .tint(.purple)
                         }
                     }
-                    
+
                     if let errorMsg {
                         Text(errorMsg)
                             .foregroundColor(.red)
@@ -129,37 +79,11 @@ struct ContentView: View {
                 }
                 .padding()
 
-                // Steps List
                 List(steps.indices, id: \.self) { idx in
-                    let s = steps[idx]
-                    HStack(alignment: .top) {
-                        Text(icon(for: s.simple))
-                            .font(.title2)
-                            .frame(width: 32)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(s.simple).font(.headline)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(s.rawInstruction)
-                                    .foregroundColor(.secondary)
-                                    .font(.subheadline)
-
-                                Text("→ in \(s.distanceText)")
-                                    .foregroundColor(.blue)
-                                    .font(.caption)
-                            }
-                        }
-                        Spacer()
-                        
-                        // Highlight the currently sending step during simulation
-                        if isSimulating && idx == currentStepIndex {
-                            Image(systemName: "antenna.radiowaves.left.and.right")
-                                .foregroundColor(.green)
-                                .animateForever()
-                        }
-                    }
-                    .listRowBackground(isSimulating && idx == currentStepIndex ? Color.green.opacity(0.1) : Color.clear)
+                    StepRowView(
+                        step: steps[idx],
+                        isHighlighted: isSimulating && idx == currentStepIndex
+                    )
                 }
                 .listStyle(.plain)
             }
@@ -171,13 +95,6 @@ struct ContentView: View {
         }
     }
 
-    private func icon(for simple: String) -> String {
-        switch simple {
-        case "LEFT": return "⬅️"
-        case "RIGHT": return "➡️"
-        default: return "⬆️"
-        }
-    }
 
     // MARK: - Preview Route (Text Origin + Destination)
     func previewRoute() {
@@ -213,6 +130,11 @@ struct ContentView: View {
                     case .success(let newSteps):
                         errorMsg = nil
                         steps = Array(newSteps.prefix(2))
+                        
+                        print("LIVE NAV UPDATE")
+                            for (idx, step) in newSteps.enumerated() {
+                                print("[\(idx)] \(step.simple) | \(step.streetName) | \(step.distanceText)")
+                            }
                     case .failure(let e):
                         errorMsg = e.localizedDescription
                     }
@@ -317,23 +239,5 @@ struct ContentView: View {
         }
     }
 }
-
-// Simple animation helper for the radio icon
-extension View {
-    func animateForever() -> some View {
-        self.modifier(PulsatingEffect())
-    }
-}
-
-struct PulsatingEffect: ViewModifier {
-    @State private var isOn = false
-    func body(content: Content) -> some View {
-        content
-            .opacity(isOn ? 1 : 0.2)
-            .animation(.easeInOut(duration: 0.8).repeatForever(), value: isOn)
-            .onAppear { isOn = true }
-    }
-}
-
 
 #Preview { ContentView() }
