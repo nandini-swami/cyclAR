@@ -12,7 +12,7 @@ final class NavigationViewModel: ObservableObject {
     @Published var destination = "Penn Museum, Philadelphia"
     @Published var steps: [DirectionStep] = []
     @Published var errorMsg: String?
-    @Published var liveMode = false
+    @Published var demoMode = false
     @Published var connectionStatus = "Not Connected"
     @Published var currentStepIndex = 0
     @Published var isSimulating = false

@@ -5,28 +5,47 @@ struct ContentView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                ESPControlPanel(
-                    espIP: APICalls.instance.espIP,
-                    connectionStatus: vm.connectionStatus,
-                    onLeft: vm.sendLeft,
-                    onRight: vm.sendRight,
-                    onUp: vm.sendUp
-                )
+            VStack(alignment: .leading, spacing: 16) {
 
-                Toggle("Live Navigation", isOn: $vm.liveMode)
-                    .padding(.horizontal)
-                    .onChange(of: vm.liveMode) { isOn in
-                        if !isOn {
+                // TOP BAR
+                HStack(alignment: .top) {
+                    ConnectionStatusBox(connectionStatus: vm.connectionStatus)
+
+                    Spacer()
+
+                    ModeToggleMenu(demoMode: $vm.demoMode) { isOn in
+                        if isOn {
                             vm.stopLiveNavigation()
                             vm.errorMsg = nil
                         } else {
                             vm.stopSimulation()
                         }
                     }
+                }
+                .padding(.horizontal)
 
+                // TITLE + MODE
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("CyclAR")
+                        .font(.system(size: 34, weight: .bold))
+
+                    ModeBadge(demoMode: vm.demoMode)
+                }
+                .padding(.horizontal)
+
+                // DEMO-ONLY CONTROL PANEL
+                if vm.demoMode {
+                    ESPControlPanel(
+                        onLeft: vm.sendLeft,
+                        onRight: vm.sendRight,
+                        onUp: vm.sendUp
+                    )
+                    .padding(.horizontal)
+                }
+
+                // INPUTS + MAIN BUTTON
                 VStack(spacing: 12) {
-                    if !vm.liveMode {
+                    if vm.demoMode {
                         TextField("Start", text: $vm.origin)
                             .textFieldStyle(.roundedBorder)
                     }
@@ -35,17 +54,17 @@ struct ContentView: View {
                         .textFieldStyle(.roundedBorder)
 
                     HStack {
-                        Button(vm.liveMode ? "Start Live Navigation" : "Get Route Preview") {
-                            if vm.liveMode {
-                                vm.startLiveNavigation()
-                            } else {
+                        Button(vm.demoMode ? "Get Route Preview" : "Start Live Navigation") {
+                            if vm.demoMode {
                                 vm.previewRoute()
+                            } else {
+                                vm.startLiveNavigation()
                             }
                         }
                         .buttonStyle(.borderedProminent)
                         .disabled(vm.isSimulating)
 
-                        if !vm.liveMode && !vm.steps.isEmpty {
+                        if vm.demoMode && !vm.steps.isEmpty {
                             Button(vm.isSimulating ? "Stop Sim" : "Send to Display") {
                                 if vm.isSimulating {
                                     vm.stopSimulation()
@@ -64,7 +83,7 @@ struct ContentView: View {
                             .font(.footnote)
                     }
                 }
-                .padding()
+                .padding(.horizontal)
 
                 List(vm.steps.indices, id: \.self) { idx in
                     StepRowView(
@@ -74,7 +93,8 @@ struct ContentView: View {
                 }
                 .listStyle(.plain)
             }
-            .navigationTitle("CyclAR")
+            .padding(.top, 8)
+            .navigationBarHidden(true)
         }
         .onDisappear {
             vm.stopSimulation()
