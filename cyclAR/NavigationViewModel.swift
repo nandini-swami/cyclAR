@@ -16,6 +16,7 @@ final class NavigationViewModel: ObservableObject {
     @Published var connectionStatus = "Not Connected"
     @Published var currentStepIndex = 0
     @Published var isSimulating = false
+    @Published var liveDisplayStep: DirectionStep?
 
     let loc = LocationManager()
 
@@ -56,12 +57,17 @@ final class NavigationViewModel: ObservableObject {
                     switch result {
                     case .success(let newSteps):
                         self.errorMsg = nil
-                        self.steps = Array(newSteps.prefix(2))
+                            self.steps = newSteps
+                            self.liveDisplayStep = newSteps.first
 
-                        print("LIVE NAV UPDATE")
-                        for (idx, step) in newSteps.enumerated() {
-                            print("[\(idx)] \(step.simple) | \(step.streetName) | \(step.distanceText)")
-                        }
+                            print("LIVE NAV UPDATE")
+                            for (idx, step) in newSteps.enumerated() {
+                                print("[\(idx)] \(step.simple) | \(step.streetName) | \(step.distanceText)")
+                            }
+
+                            if let stepToDisplay = self.liveDisplayStep {
+                                print("DISPLAY PREVIEW -> \(stepToDisplay.simple) | \(stepToDisplay.distanceText) | \(stepToDisplay.streetName)")
+                            }
                     case .failure(let e):
                         self.errorMsg = e.localizedDescription
                     }
@@ -72,7 +78,8 @@ final class NavigationViewModel: ObservableObject {
 
     func stopLiveNavigation() {
         navTimer?.invalidate()
-        navTimer = nil
+            navTimer = nil
+            liveDisplayStep = nil
     }
 
     // MARK: - Manual Send Functions

@@ -84,6 +84,41 @@ struct ContentView: View {
                     }
                 }
                 .padding(.horizontal)
+                
+                if !vm.demoMode, let step = vm.liveDisplayStep {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Sending to Display")
+                            .font(.headline)
+
+                        HStack {
+                            Text(icon(for: step.simple))
+                                .font(.title2)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(step.simple)
+                                    .font(.headline)
+                                Text(step.streetName.isEmpty ? "—" : step.streetName)
+                                    .font(.subheadline)
+                                Text(step.distanceText)
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+
+                        Divider()
+
+                        Text("Direction: \(step.simple)")
+                        Text("Street: \(step.streetName.isEmpty ? "—" : step.streetName)")
+                        Text("Distance: \(step.distanceText)")
+                    }
+                    .font(.subheadline)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(Color(.systemGray6))
+                    )
+                    .padding(.horizontal)
+                }
 
                 List(vm.steps.indices, id: \.self) { idx in
                     StepRowView(
@@ -99,6 +134,14 @@ struct ContentView: View {
         .onDisappear {
             vm.stopSimulation()
             vm.stopLiveNavigation()
+        }
+    }
+    
+    private func icon(for simple: String) -> String {
+        switch simple {
+        case "LEFT": return "⬅️"
+        case "RIGHT": return "➡️"
+        default: return "⬆️"
         }
     }
 }
