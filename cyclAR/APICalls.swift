@@ -14,8 +14,8 @@ enum APIError: Error { case invalidURL, noRoutes, network(String), parse }
 final class APICalls {
     static let instance = APICalls()
         private init() {}
-
-        private let apiKey = "AIzaSyD9MeMxz_se6k68BnoQdTNLEY4yf_E4xa4"
+        var espIP: String = "10.103.214.102"
+        private let apiKey = ""
     
     // Addy to addy
     func getBikeDirections(origin: String, destination: String,
@@ -217,7 +217,7 @@ final class APICalls {
     }
     
     func sendDataToESP32(message: String, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let url = URL(string: "http://172.20.10.3/command") else {
+        guard let url = URL(string: "http://\(espIP)/command") else {
             return completion(.failure(APIError.invalidURL))
         }
         
