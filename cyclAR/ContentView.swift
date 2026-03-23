@@ -28,6 +28,13 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("CyclAR")
                         .font(.system(size: 34, weight: .bold))
+                    
+                    // Optional: add below the "CyclAR" Text in ContentView.swift
+                    if let user = UserStore.shared.currentUser {
+                        Text("Hi, \(user.name.components(separatedBy: " ").first ?? user.name)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
 
                     ModeBadge(demoMode: vm.demoMode)
                 }
