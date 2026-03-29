@@ -17,7 +17,8 @@ final class NavigationViewModel: ObservableObject {
     @Published var currentStepIndex = 0
     @Published var isSimulating = false
     @Published var liveDisplayStep: DirectionStep?
-
+    
+    let ble = BLEManager.shared
     let loc = LocationManager()
 
     var navTimer: Timer?
@@ -59,6 +60,10 @@ final class NavigationViewModel: ObservableObject {
                         self.errorMsg = nil
                             self.steps = newSteps
                             self.liveDisplayStep = newSteps.first
+                            
+                            if let stepToDisplay = self.liveDisplayStep {
+                                self.sendStepOverBLE(stepToDisplay)
+                            }
 
                             print("LIVE NAV UPDATE")
                             for (idx, step) in newSteps.enumerated() {
@@ -84,27 +89,18 @@ final class NavigationViewModel: ObservableObject {
 
     // MARK: - Manual Send Functions
     func sendLeft() {
-        print("Button Pressed: Left")
-        connectionStatus = "Sending Left..."
-        APICalls.instance.sendDataToESP32(message: "left") { result in
-            self.handleResult(result)
-        }
+        ble.sendNavUpdate(street: "", arrow: "←", distance: "")
+        connectionStatus = ble.connectionStatus
     }
 
     func sendRight() {
-        print("Button Pressed: Right")
-        connectionStatus = "Sending Right..."
-        APICalls.instance.sendDataToESP32(message: "right") { result in
-            self.handleResult(result)
-        }
+        ble.sendNavUpdate(street: "", arrow: "→", distance: "")
+        connectionStatus = ble.connectionStatus
     }
 
     func sendUp() {
-        print("Button Pressed: Up")
-        connectionStatus = "Sending Up..."
-        APICalls.instance.sendDataToESP32(message: "up") { result in
-            self.handleResult(result)
-        }
+        ble.sendNavUpdate(street: "", arrow: "↑", distance: "")
+        connectionStatus = ble.connectionStatus
     }
 
     // MARK: - Simulation Logic
@@ -131,31 +127,36 @@ final class NavigationViewModel: ObservableObject {
         }
     }
 
+    // old http version
+//    func sendCurrentStep() {
+//        let step = steps[currentStepIndex]
+//
+//        let direction = step.simple.lowercased()
+//        var commandToSend = "up"
+//
+//        if direction.contains("left") {
+//            commandToSend = "left"
+//        } else if direction.contains("right") {
+//            commandToSend = "right"
+//        }
+//
+//        print("Simulating Step \(currentStepIndex) (\(step.simple)) -> Sending: \(commandToSend)")
+//        connectionStatus = "Simulating: \(commandToSend)..."
+//
+//        APICalls.instance.sendDataToESP32(message: commandToSend) { result in
+//            DispatchQueue.main.async {
+//                switch result {
+//                case .success(let response):
+//                    self.connectionStatus = "Sent: \(commandToSend) (\(response))"
+//                case .failure(let error):
+//                    self.connectionStatus = "Err: \(error.localizedDescription)"
+//                }
+//            }
+//        }
+//    }
     func sendCurrentStep() {
         let step = steps[currentStepIndex]
-
-        let direction = step.simple.lowercased()
-        var commandToSend = "up"
-
-        if direction.contains("left") {
-            commandToSend = "left"
-        } else if direction.contains("right") {
-            commandToSend = "right"
-        }
-
-        print("Simulating Step \(currentStepIndex) (\(step.simple)) -> Sending: \(commandToSend)")
-        connectionStatus = "Simulating: \(commandToSend)..."
-
-        APICalls.instance.sendDataToESP32(message: commandToSend) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let response):
-                    self.connectionStatus = "Sent: \(commandToSend) (\(response))"
-                case .failure(let error):
-                    self.connectionStatus = "Err: \(error.localizedDescription)"
-                }
-            }
-        }
+        sendStepOverBLE(step)
     }
 
     func stopSimulation() {
@@ -174,5 +175,31 @@ final class NavigationViewModel: ObservableObject {
                 self.connectionStatus = "Error: \(error.localizedDescription)"
             }
         }
+    }
+    private func arrowForStep(_ step: DirectionStep) -> String {
+        let text = step.simple.lowercased()
+
+        if text.contains("uturn") || text.contains("u-turn") {
+            return "↩"
+        } else if text.contains("slight right") {
+            return "↗"
+        } else if text.contains("slight left") {
+            return "↖"
+        } else if text.contains("right") {
+            return "→"
+        } else if text.contains("left") {
+            return "←"
+        } else {
+            return "↑"
+        }
+    }
+
+    func sendStepOverBLE(_ step: DirectionStep) {
+        let street = step.streetName
+        let arrow = arrowForStep(step)
+        let distance = step.distanceText
+
+        ble.sendNavUpdate(street: street, arrow: arrow, distance: distance)
+        connectionStatus = ble.connectionStatus
     }
 }

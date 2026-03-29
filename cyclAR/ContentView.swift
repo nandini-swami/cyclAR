@@ -42,7 +42,7 @@ struct ContentView: View {
 
                 // DEMO-ONLY CONTROL PANEL
                 if vm.demoMode {
-                    ESPControlPanel(
+                    BLEControlPanel(
                         onLeft: vm.sendLeft,
                         onRight: vm.sendRight,
                         onUp: vm.sendUp
@@ -145,13 +145,22 @@ struct ContentView: View {
     }
     
     private func icon(for simple: String) -> String {
-        switch simple {
-        case "LEFT": return "⬅️"
-        case "RIGHT": return "➡️"
-        default: return "⬆️"
+        let s = simple.uppercased()
+
+        if s.contains("UTURN") || s.contains("U-TURN") {
+            return "↩"
+        } else if s.contains("SLIGHT RIGHT") {
+            return "↗"
+        } else if s.contains("SLIGHT LEFT") {
+            return "↖"
+        } else if s.contains("RIGHT") {
+            return "→"
+        } else if s.contains("LEFT") {
+            return "←"
+        } else {
+            return "↑"
         }
-    }
-}
+    }}
 
 #Preview {
     ContentView()

@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct ESPControlPanel: View {
+struct BLEControlPanel: View {
     let onLeft: () -> Void
     let onRight: () -> Void
     let onUp: () -> Void

@@ -19,9 +19,9 @@ final class BLEManager: NSObject, ObservableObject {
     private var piPeripheral: CBPeripheral?
     private var commandCharacteristic: CBCharacteristic?
 
-    // replace these with the UUIDs you use on the Pi
-    private let serviceUUID = CBUUID(string: "12345678-1234-1234-1234-1234567890AB")
-    private let characteristicUUID = CBUUID(string: "ABCD1234-5678-1234-5678-1234567890AB")
+    // these must match the Pi exactly
+    private let serviceUUID = CBUUID(string: "12345678-1234-5678-1234-56789abcdef0")
+    private let characteristicUUID = CBUUID(string: "12345678-1234-5678-1234-56789abcdef1")
 
     override init() {
         super.init()
@@ -34,7 +34,7 @@ final class BLEManager: NSObject, ObservableObject {
             return
         }
 
-        connectionStatus = "Scanning for Pi..."
+        connectionStatus = "Scanning for NavDisplay..."
         centralManager.scanForPeripherals(withServices: [serviceUUID], options: nil)
     }
 
@@ -43,16 +43,31 @@ final class BLEManager: NSObject, ObservableObject {
         centralManager.cancelPeripheralConnection(piPeripheral)
     }
 
-    func send(_ message: String) {
+    func sendNavUpdate(street: String, arrow: String, distance: String) {
         guard let piPeripheral,
-              let commandCharacteristic,
-              let data = message.data(using: .utf8) else {
+              let commandCharacteristic else {
             connectionStatus = "Not ready to send"
             return
         }
 
-        piPeripheral.writeValue(data, for: commandCharacteristic, type: .withResponse)
-        connectionStatus = "Sent: \(message)"
+        let payload: [String: String] = [
+            "street": street,
+            "arrow": arrow,
+            "distance": distance
+        ]
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: payload, options: [])
+            piPeripheral.writeValue(data, for: commandCharacteristic, type: .withResponse)
+            connectionStatus = "Sent \(street) | \(arrow) | \(distance)"
+        } catch {
+            connectionStatus = "JSON encode failed"
+        }
+    }
+
+    // optional helper for debug buttons
+    func sendArrowOnly(_ arrow: String) {
+        sendNavUpdate(street: "", arrow: arrow, distance: "")
     }
 }
 
@@ -77,7 +92,7 @@ extension BLEManager: CBCentralManagerDelegate {
                         advertisementData: [String : Any],
                         rssi RSSI: NSNumber) {
         discoveredDeviceName = peripheral.name
-        connectionStatus = "Found \(peripheral.name ?? "Pi"), connecting..."
+        connectionStatus = "Found \(peripheral.name ?? "NavDisplay"), connecting..."
         piPeripheral = peripheral
         piPeripheral?.delegate = self
         centralManager.stopScan()
@@ -87,7 +102,7 @@ extension BLEManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager,
                         didConnect peripheral: CBPeripheral) {
         isConnected = true
-        connectionStatus = "Connected to \(peripheral.name ?? "Pi")"
+        connectionStatus = "Connected to \(peripheral.name ?? "NavDisplay")"
         peripheral.discoverServices([serviceUUID])
     }
 
