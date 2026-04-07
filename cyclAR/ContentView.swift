@@ -1,5 +1,4 @@
 import SwiftUI
-
 struct ContentView: View {
     @StateObject private var vm = NavigationViewModel()
 

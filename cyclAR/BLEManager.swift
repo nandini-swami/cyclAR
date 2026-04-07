@@ -73,9 +73,11 @@ final class BLEManager: NSObject, ObservableObject {
 
 extension BLEManager: CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        print("BLE state changed: \(central.state.rawValue)")
         switch central.state {
         case .poweredOn:
             connectionStatus = "Bluetooth ready"
+            startScanning()
         case .poweredOff:
             connectionStatus = "Bluetooth off"
         case .unauthorized:
@@ -95,13 +97,16 @@ extension BLEManager: CBCentralManagerDelegate {
         connectionStatus = "Found \(peripheral.name ?? "NavDisplay"), connecting..."
         piPeripheral = peripheral
         piPeripheral?.delegate = self
+        print("Discovered peripheral: \(peripheral.name ?? "unknown")")
         centralManager.stopScan()
+        print("Discovered peripheral: \(peripheral.name ?? "unknown")")
         central.connect(peripheral, options: nil)
     }
 
     func centralManager(_ central: CBCentralManager,
                         didConnect peripheral: CBPeripheral) {
         isConnected = true
+        print("Connected to peripheral: \(peripheral.name ?? "unknown")")
         connectionStatus = "Connected to \(peripheral.name ?? "NavDisplay")"
         peripheral.discoverServices([serviceUUID])
     }
@@ -125,7 +130,7 @@ extension BLEManager: CBCentralManagerDelegate {
 extension BLEManager: CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
-
+        print("Discovered services: \(String(describing: peripheral.services))")
         for service in services where service.uuid == serviceUUID {
             peripheral.discoverCharacteristics([characteristicUUID], for: service)
         }
@@ -135,7 +140,7 @@ extension BLEManager: CBPeripheralDelegate {
                     didDiscoverCharacteristicsFor service: CBService,
                     error: Error?) {
         guard let characteristics = service.characteristics else { return }
-
+        print("Discovered characteristics: \(String(describing: service.characteristics))")
         for characteristic in characteristics where characteristic.uuid == characteristicUUID {
             commandCharacteristic = characteristic
             connectionStatus = "Ready to send"
