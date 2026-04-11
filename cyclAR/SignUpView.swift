@@ -138,7 +138,6 @@ struct SignUpView: View {
 
     private func icon(for method: AlertMethod) -> String {
         switch method {
-        case .audio:   return "speaker.wave.2"
         case .display: return "display"
         case .haptics: return "iphone.radiowaves.left.and.right"
         }

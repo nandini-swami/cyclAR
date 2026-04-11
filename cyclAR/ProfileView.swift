@@ -12,9 +12,11 @@ import SwiftUI
 struct ProfileView: View {
     @EnvironmentObject var userStore: UserStore
     @State private var showingLogoutConfirm = false
+    @State private var showingNoAlertsConfirm = false
 
     @State private var selectedCoverage: SafetyAlertCoverage = .medAndHigh
     @State private var selectedMethods: Set<AlertMethod> = []
+    @State private var pendingRemovalMethod: AlertMethod?
     @State private var savedMessage: String?
 
     var body: some View {
@@ -68,16 +70,7 @@ struct ProfileView: View {
                                 }
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    if selectedMethods.contains(method) {
-                                        // prevent removing the last method
-                                        if selectedMethods.count > 1 {
-                                            selectedMethods.remove(method)
-                                            savePreferences()
-                                        }
-                                    } else {
-                                        selectedMethods.insert(method)
-                                        savePreferences()
-                                    }
+                                    handleMethodTap(method)
                                 }
                             }
                         }
@@ -118,20 +111,49 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .alert("Log Out", isPresented: $showingLogoutConfirm) {
-                Button("Log Out", role: .destructive) { userStore.logout() }
+                Button("Log Out", role: .destructive) {
+                    userStore.logout()
+                }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Are you sure you want to log out?")
             }
+            .alert("Turn off all alert feedback?", isPresented: $showingNoAlertsConfirm) {
+                Button("Keep One On", role: .cancel) {
+                    pendingRemovalMethod = nil
+                }
+                Button("Turn Off All Alerts", role: .destructive) {
+                    if let method = pendingRemovalMethod {
+                        selectedMethods.remove(method)
+                        savePreferences()
+                    }
+                    pendingRemovalMethod = nil
+                }
+            } message: {
+                Text("You have selected no alert feedback. You will not receive display or haptic alerts.")
+            }
+        }
+    }
+
+    private func handleMethodTap(_ method: AlertMethod) {
+        if selectedMethods.contains(method) {
+            if selectedMethods.count == 1 {
+                pendingRemovalMethod = method
+                showingNoAlertsConfirm = true
+            } else {
+                selectedMethods.remove(method)
+                savePreferences()
+            }
+        } else {
+            selectedMethods.insert(method)
+            savePreferences()
         }
     }
 
     private func savePreferences() {
-        guard !selectedMethods.isEmpty else { return }
-
         userStore.updatePreferences(
             safetyAlertCoverage: selectedCoverage,
-            alertMethods: Array(selectedMethods)
+            alertMethods: AlertMethod.allCases.filter { selectedMethods.contains($0) }
         )
 
         savedMessage = "Preferences updated"
@@ -143,8 +165,6 @@ struct ProfileView: View {
 
     private func icon(for method: AlertMethod) -> String {
         switch method {
-        case .audio:
-            return "speaker.wave.2"
         case .display:
             return "display"
         case .haptics:

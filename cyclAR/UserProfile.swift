@@ -20,7 +20,6 @@ enum SafetyAlertCoverage: String, Codable, CaseIterable {
 }
 
 enum AlertMethod: String, Codable, CaseIterable {
-    case audio    = "Audio"
     case display  = "Display"
     case haptics  = "Haptics"
 }
