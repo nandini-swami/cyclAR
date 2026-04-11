@@ -151,10 +151,16 @@ struct ProfileView: View {
     }
 
     private func savePreferences() {
+        let orderedMethods = AlertMethod.allCases.filter { selectedMethods.contains($0) }
         userStore.updatePreferences(
             safetyAlertCoverage: selectedCoverage,
-            alertMethods: AlertMethod.allCases.filter { selectedMethods.contains($0) }
+            alertMethods: orderedMethods
         )
+        
+        BLEManager.shared.sendConfigUpdate(
+                coverage: selectedCoverage,
+                alertMethods: orderedMethods
+            )
 
         savedMessage = "Preferences updated"
 

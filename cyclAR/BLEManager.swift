@@ -50,18 +50,39 @@ final class BLEManager: NSObject, ObservableObject {
             return
         }
 
-        let payload: [String: String] = [
-            "street": street,
-            "arrow": arrow,
-            "distance": distance
-        ]
+        let payload = NavPayload(
+                street: street,
+                arrow: arrow,
+                distance: distance
+            )
 
         do {
-            let data = try JSONSerialization.data(withJSONObject: payload, options: [])
+            let data = try JSONEncoder().encode(payload)
             piPeripheral.writeValue(data, for: commandCharacteristic, type: .withResponse)
-            connectionStatus = "Sent \(street) | \(arrow) | \(distance)"
+            connectionStatus = "Sent nav \(street) | \(arrow) | \(distance)"
         } catch {
             connectionStatus = "JSON encode failed"
+        }
+    }
+    
+    func sendConfigUpdate(coverage: SafetyAlertCoverage, alertMethods: [AlertMethod]) {
+        guard let piPeripheral,
+              let commandCharacteristic else {
+            connectionStatus = "Not ready to send config"
+            return
+        }
+
+        let payload = ConfigPayload(
+                alertCoverage: coverage.rawValue,
+                alertMethods: alertMethods.map(\.rawValue)
+            )
+
+        do {
+            let data = try JSONEncoder().encode(payload)
+            piPeripheral.writeValue(data, for: commandCharacteristic, type: .withResponse)
+            connectionStatus = "Sent config update"
+        } catch {
+            connectionStatus = "Config JSON encode failed"
         }
     }
 
@@ -145,6 +166,14 @@ extension BLEManager: CBPeripheralDelegate {
         for characteristic in characteristics where characteristic.uuid == characteristicUUID {
             commandCharacteristic = characteristic
             connectionStatus = "Ready to send"
+            
+            // send config after BLE connections
+            if let user = UserStore.shared.currentUser {
+                    sendConfigUpdate(
+                        coverage: user.safetyAlertCoverage,
+                        alertMethods: user.alertMethods
+                    )
+                }
         }
     }
 
