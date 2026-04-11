@@ -18,6 +18,14 @@ final class NavigationViewModel: ObservableObject {
     @Published var isSimulating = false
     @Published var liveDisplayStep: DirectionStep?
     
+    // Search autocomplete variables
+    @Published var destinationSuggestions: [PlaceSuggestion] = []
+    @Published var selectedDestinationAddress: String?
+    @Published var selectedDestinationPlaceID: String?
+
+    private var destinationSessionToken = UUID().uuidString
+    private var autocompleteWorkItem: DispatchWorkItem?
+    
     let ble = BLEManager.shared
     let loc = LocationManager()
 
@@ -202,4 +210,52 @@ final class NavigationViewModel: ObservableObject {
         ble.sendNavUpdate(street: street, arrow: arrow, distance: distance)
         connectionStatus = ble.connectionStatus
     }
+    
+    // Autocomplete functions
+    func destinationTextChanged(_ newValue: String) {
+        selectedDestinationAddress = nil
+        selectedDestinationPlaceID = nil
+
+        autocompleteWorkItem?.cancel()
+
+        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard trimmed.count >= 3 else {
+            destinationSuggestions = []
+            return
+        }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+
+            PlacesService.shared.fetchSuggestions(
+                input: trimmed,
+                sessionToken: self.destinationSessionToken
+            ) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let suggestions):
+                        self.destinationSuggestions = suggestions
+                    case .failure:
+                        self.destinationSuggestions = []
+                    }
+                }
+            }
+        }
+
+        autocompleteWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.30, execute: workItem)
+    }
+
+    func selectDestinationSuggestion(_ suggestion: PlaceSuggestion) {
+        destination = suggestion.fullText
+        selectedDestinationAddress = suggestion.fullText
+        selectedDestinationPlaceID = suggestion.id
+        destinationSuggestions = []
+
+        // start a new session next time user begins typing again
+        destinationSessionToken = UUID().uuidString
+    }
+
 }
+

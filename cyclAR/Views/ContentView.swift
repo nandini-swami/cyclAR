@@ -56,8 +56,54 @@ struct ContentView: View {
                             .textFieldStyle(.roundedBorder)
                     }
 
-                    TextField("Destination", text: $vm.destination)
-                        .textFieldStyle(.roundedBorder)
+                    // 
+                    VStack(alignment: .leading, spacing: 6) {
+                        TextField("Destination", text: $vm.destination)
+                            .textFieldStyle(.roundedBorder)
+                            .onChange(of: vm.destination) { newValue in
+                                vm.destinationTextChanged(newValue)
+                            }
+
+                        if !vm.destinationSuggestions.isEmpty {
+                            VStack(spacing: 0) {
+                                ForEach(vm.destinationSuggestions) { suggestion in
+                                    Button {
+                                        vm.selectDestinationSuggestion(suggestion)
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(suggestion.primaryText)
+                                                .foregroundColor(.primary)
+
+                                            if !suggestion.secondaryText.isEmpty {
+                                                Text(suggestion.secondaryText)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                    }
+
+                                    Divider()
+                                }
+                            }
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.systemBackground))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color(.systemGray4))
+                            )
+                        }
+
+                        if let selected = vm.selectedDestinationAddress {
+                            Text("Selected: \(selected)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
 
                     HStack {
                         Button(vm.demoMode ? "Get Route Preview" : "Start Live Navigation") {
