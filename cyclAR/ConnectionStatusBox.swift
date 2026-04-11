@@ -1,41 +1,57 @@
+//  Created by Nandini Swami on 3/19/26.
+//
 //
 //  ConnectionStatusBox.swift
 //  cyclAR
 //
-//  Created by Nandini Swami on 3/19/26.
+//  Kept for compatibility — the status pill is now embedded directly
+//  in CyclARNavBar inside ContentView. This view is no longer used
+//  in the main layout but is preserved here in case it's referenced
+//  elsewhere in the project.
 //
+ 
 import SwiftUI
-
+ 
 struct ConnectionStatusBox: View {
     let connectionStatus: String
-
+ 
+    private var isConnected: Bool {
+        connectionStatus.lowercased().contains("connect") &&
+        !connectionStatus.lowercased().contains("not")
+    }
+    private var isError: Bool {
+        connectionStatus.lowercased().contains("error") ||
+        connectionStatus.lowercased().contains("err")
+    }
+ 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("STATUS")
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .foregroundColor(.gray)
-
+        HStack(spacing: 5) {
+            Circle()
+                .fill(dotColor)
+                .frame(width: 6, height: 6)
             Text(connectionStatus)
-                .font(.caption)
-                .foregroundColor(statusColor)
-                .lineLimit(2)
+                .font(.cyclARCaption)
+                .foregroundColor(labelColor)
+                .lineLimit(1)
         }
-        .padding(10)
-        .frame(maxWidth: 140, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray6))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Color.white)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.borderGray, lineWidth: 1)
         )
     }
-
-    private var statusColor: Color {
-        if connectionStatus.lowercased().contains("success") {
-            return .green
-        } else if connectionStatus.lowercased().contains("error") || connectionStatus.lowercased().contains("err") {
-            return .red
-        } else {
-            return .gray
-        }
+ 
+    private var dotColor: Color {
+        if isConnected { return Color(hex: "#3B6D11") }
+        if isError     { return .brand }
+        return .textMuted
+    }
+    private var labelColor: Color {
+        if isConnected { return Color(hex: "#3B6D11") }
+        if isError     { return .brand }
+        return .textMuted
     }
 }

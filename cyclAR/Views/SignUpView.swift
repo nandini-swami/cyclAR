@@ -20,86 +20,135 @@ struct SignUpView: View {
 
     var body: some View {
         NavigationView {
-            Form {
-                Section(header: Text("Account Info")) {
-                    TextField("Full Name", text: $name)
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    SecureField("Password", text: $password)
-                    // FIX: added confirm password so user doesn't mistype
-                    SecureField("Confirm Password", text: $confirmPassword)
-                }
+            ZStack {
+                Color.surfaceGray.ignoresSafeArea()
 
-                Section(header: Text("Road Safety Alert Detection Coverage")) {
-                    ForEach(SafetyAlertCoverage.allCases, id: \.self) { option in
-                        HStack {
-                            Text(option.rawValue)
-                            Spacer()
-                            if coverage == option {
-                                Image(systemName: "checkmark").foregroundColor(.green)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+
+                        // ── ACCOUNT INFO ─────────────────────────────
+                        FormSection(title: "Account Info") {
+                            FormField(label: "Full Name", placeholder: "Jane Doe", text: $name)
+                            Divider().padding(.horizontal, 14)
+                            FormField(label: "Email", placeholder: "you@example.com", text: $email,
+                                      keyboardType: .emailAddress, autoCapitalize: false)
+                            Divider().padding(.horizontal, 14)
+                            FormSecureField(label: "Password", placeholder: "Min. 6 characters", text: $password)
+                            Divider().padding(.horizontal, 14)
+                            FormSecureField(label: "Confirm Password", placeholder: "Repeat password", text: $confirmPassword)
+                        }
+
+                        // ── SAFETY ALERT COVERAGE ─────────────────────
+                        FormSection(title: "Alert Coverage") {
+                            ForEach(SafetyAlertCoverage.allCases, id: \.self) { option in
+                                Button {
+                                    coverage = option
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "shield.lefthalf.filled")
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.brand)
+                                            .frame(width: 20)
+                                        Text(option.rawValue)
+                                            .font(.cyclARBody)
+                                            .foregroundColor(.appBlack)
+                                        Spacer()
+                                        SelectionIndicator(isSelected: coverage == option)
+                                    }
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 12)
+                                }
+                                if option != SafetyAlertCoverage.allCases.last {
+                                    Divider().padding(.horizontal, 14)
+                                }
                             }
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture { coverage = option }
-                    }
-                }
 
-                Section(header: Text("How to Receive Road Safety Alerts")) {
-                    ForEach(AlertMethod.allCases, id: \.self) { method in
-                        HStack {
-                            Image(systemName: icon(for: method))
-                                .foregroundColor(.green)
-                                .frame(width: 24)
-                            Text(method.rawValue)
-                            Spacer()
-                            if alertMethods.contains(method) {
-                                Image(systemName: "checkmark").foregroundColor(.green)
+                        // ── ALERT METHODS ─────────────────────────────
+                        FormSection(title: "Alert Methods") {
+                            ForEach(AlertMethod.allCases, id: \.self) { method in
+                                Button {
+                                    if alertMethods.contains(method) { alertMethods.remove(method) }
+                                    else { alertMethods.insert(method) }
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: methodIcon(method))
+                                            .font(.system(size: 14))
+                                            .foregroundColor(.brand)
+                                            .frame(width: 20)
+                                        Text(method.rawValue)
+                                            .font(.cyclARBody)
+                                            .foregroundColor(.appBlack)
+                                        Spacer()
+                                        SelectionIndicator(isSelected: alertMethods.contains(method))
+                                    }
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 12)
+                                }
+                                if method != AlertMethod.allCases.last {
+                                    Divider().padding(.horizontal, 14)
+                                }
                             }
                         }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            if alertMethods.contains(method) {
-                                alertMethods.remove(method)
-                            } else {
-                                alertMethods.insert(method)
+
+                        // ── ERROR / SUCCESS ───────────────────────────
+                        if let err = errorMsg {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(.system(size: 12))
+                                Text(err)
+                                    .font(.cyclARCaption)
                             }
+                            .foregroundColor(.brand)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
                         }
-                    }
-                }
 
-                if let err = errorMsg {
-                    Section {
-                        Text(err).foregroundColor(.red).font(.caption)
-                    }
-                }
+                        if didSucceed {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 12))
+                                Text("Account created! You can now log in.")
+                                    .font(.cyclARCaption)
+                            }
+                            .foregroundColor(Color(hex: "#3B6D11"))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
+                        }
 
-                if didSucceed {
-                    Section {
-                        Text("Account created! You can now log in.")
-                            .foregroundColor(.green)
-                            .font(.caption)
+                        // ── CREATE BUTTON ─────────────────────────────
+                        Button {
+                            handleSignUp()
+                        } label: {
+                            Text("Create Account")
+                                .font(.cyclARHeadline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(Color.brand)
+                                .cornerRadius(12)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 32)
                     }
-                }
-
-                Section {
-                    Button("Create Account") {
-                        handleSignUp()
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .foregroundColor(.green)
-                    .fontWeight(.semibold)
+                    .padding(.top, 16)
                 }
             }
             .navigationTitle("Sign Up")
-            .navigationBarItems(leading: Button("Cancel") { dismiss() })
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .font(.cyclARBody)
+                        .foregroundColor(.brand)
+                }
+            }
         }
     }
 
     private func handleSignUp() {
         errorMsg = nil
         didSucceed = false
-
         guard !name.isEmpty, !email.isEmpty, !password.isEmpty else {
             errorMsg = "Please fill in all fields."
             return
@@ -116,30 +165,104 @@ struct SignUpView: View {
             errorMsg = "Select at least one alert method."
             return
         }
-
         let profile = UserProfile(
-            name: name,
-            email: email,
-            password: password,           // password is now stored in the model
+            name: name, email: email, password: password,
             safetyAlertCoverage: coverage,
             alertMethods: Array(alertMethods)
         )
-
-        // FIX: call register() (not save() which doesn't exist)
-        // register() saves to disk WITHOUT logging in — user must log in manually
         userStore.register(profile)
         didSucceed = true
-
-        // Brief delay so the user sees the success message, then dismiss
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            dismiss()
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
     }
 
-    private func icon(for method: AlertMethod) -> String {
+    private func methodIcon(_ method: AlertMethod) -> String {
         switch method {
         case .display: return "display"
         case .haptics: return "iphone.radiowaves.left.and.right"
+        }
+    }
+}
+
+// MARK: - Reusable form sub-views
+
+struct FormSection<Content: View>: View {
+    let title: String
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionHeaderLabel(text: title)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 8)
+
+            VStack(spacing: 0) {
+                content()
+            }
+            .background(Color.white)
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.borderGray, lineWidth: 1)
+            )
+            .padding(.horizontal, 24)
+        }
+    }
+}
+
+struct FormField: View {
+    let label: String
+    let placeholder: String
+    @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    var autoCapitalize: Bool = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            SectionHeaderLabel(text: label)
+            TextField(placeholder, text: $text)
+                .font(.cyclARBody)
+                .foregroundColor(.appBlack)
+                .keyboardType(keyboardType)
+                .autocapitalization(autoCapitalize ? .words : .none)
+                .disableAutocorrection(!autoCapitalize)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+}
+
+struct FormSecureField: View {
+    let label: String
+    let placeholder: String
+    @Binding var text: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            SectionHeaderLabel(text: label)
+            SecureField(placeholder, text: $text)
+                .font(.cyclARBody)
+                .foregroundColor(.appBlack)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+    }
+}
+
+struct SelectionIndicator: View {
+    let isSelected: Bool
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(isSelected ? Color.brand : Color.clear)
+                .frame(width: 18, height: 18)
+            Circle()
+                .stroke(isSelected ? Color.brand : Color.borderGray, lineWidth: 1.5)
+                .frame(width: 18, height: 18)
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white)
+            }
         }
     }
 }

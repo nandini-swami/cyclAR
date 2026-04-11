@@ -35,9 +35,22 @@
 		9210D9B72EBAA50400DAFDDD /* cyclARUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cyclARUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		9245A89A2F8AFDC000DC5C28 /* Exceptions for "cyclAR" folder in "cyclAR" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9210D99C2EBAA50200DAFDDD /* cyclAR */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9210D99F2EBAA50200DAFDDD /* cyclAR */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				9245A89A2F8AFDC000DC5C28 /* Exceptions for "cyclAR" folder in "cyclAR" target */,
+			);
 			path = cyclAR;
 			sourceTree = "<group>";
 		};
