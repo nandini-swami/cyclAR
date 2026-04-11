@@ -17,7 +17,7 @@ final class PlacesService {
     static let shared = PlacesService()
     private init() {}
 
-    private let apiKey = "YOUR_API_KEY_HERE"
+    private let apiKey = "AIzaSyD9MeMxz_se6k68BnoQdTNLEY4yf_E4xa4"
 
     func fetchSuggestions(
         input: String,
@@ -32,7 +32,6 @@ final class PlacesService {
         let body: [String: Any] = [
             "input": input,
             "sessionToken": sessionToken,
-            "includedPrimaryTypes": ["street_address"],
             "languageCode": "en"
         ]
 

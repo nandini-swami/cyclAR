@@ -14,7 +14,6 @@ enum APIError: Error { case invalidURL, noRoutes, network(String), parse }
 final class APICalls {
     static let instance = APICalls()
         private init() {}
-        var espIP: String = "10.103.214.102"
         private let apiKey = "AIzaSyD9MeMxz_se6k68BnoQdTNLEY4yf_E4xa4"
     
     // Addy to addy
@@ -278,36 +277,5 @@ final class APICalls {
             let miles = feet / 5280
             return String(format: "%.1f mi", miles)
         }
-    }
-    
-    func sendDataToESP32(message: String, completion: @escaping (Result<String, Error>) -> Void) {
-        guard let url = URL(string: "http://\(espIP)/command") else {
-            return completion(.failure(APIError.invalidURL))
-        }
-        
-        /// "http://10.0.0.121/command"
-        // esp ip - 10.0.0.121
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        // tells esp the data type
-        request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
-        
-        request.httpBody = message.data(using: .utf8)
-        
-        let task = URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error = error {
-                        return completion(.failure(error))
-                    }
-                    
-                    guard let data = data, let responseString = String(data: data, encoding: .utf8) else {
-                        return completion(.failure(APIError.network("No data received")))
-                    }
-                    
-                    completion(.success(responseString))
-        }
-
-        task.resume()
     }
 }

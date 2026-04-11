@@ -24,18 +24,13 @@ struct ContentView: View {
                 .padding(.horizontal)
 
                 // TITLE + MODE
-                VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
                     Text("CyclAR")
-                        .font(.system(size: 34, weight: .bold))
-                    
-                    // Optional: add below the "CyclAR" Text in ContentView.swift
-                    if let user = UserStore.shared.currentUser {
-                        Text("Hi, \(user.name.components(separatedBy: " ").first ?? user.name)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
 
                     ModeBadge(demoMode: vm.demoMode)
+
+                    Spacer()
                 }
                 .padding(.horizontal)
 
@@ -106,7 +101,7 @@ struct ContentView: View {
                     }
 
                     HStack {
-                        Button(vm.demoMode ? "Get Route Preview" : "Start Live Navigation") {
+                        Button(vm.demoMode ? "Preview Route" : "Go") {
                             if vm.demoMode {
                                 vm.previewRoute()
                             } else {

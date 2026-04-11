@@ -35,22 +35,9 @@
 		9210D9B72EBAA50400DAFDDD /* cyclARUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cyclARUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		92A9A1C82EE1DB6C0064B21A /* Exceptions for "cyclAR" folder in "cyclAR" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 9210D99C2EBAA50200DAFDDD /* cyclAR */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		9210D99F2EBAA50200DAFDDD /* cyclAR */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				92A9A1C82EE1DB6C0064B21A /* Exceptions for "cyclAR" folder in "cyclAR" target */,
-			);
 			path = cyclAR;
 			sourceTree = "<group>";
 		};
@@ -199,7 +186,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					9210D99C2EBAA50200DAFDDD = {
 						CreatedOnToolsVersion = 16.2;
@@ -371,6 +358,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -427,6 +415,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -444,6 +433,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cyclAR/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Used to connect to your cycling microcontroller for turn-by-turn directions.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "CyclAR needs to connect to your ESP32 bike signal.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app provides live cycling navigation that requires continuous location updates.";
@@ -478,6 +468,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = cyclAR/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Used to connect to your cycling microcontroller for turn-by-turn directions.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "CyclAR needs to connect to your ESP32 bike signal.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app provides live cycling navigation that requires continuous location updates.";
