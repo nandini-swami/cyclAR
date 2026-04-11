@@ -106,6 +106,7 @@ extension BLEManager: CBCentralManagerDelegate {
     func centralManager(_ central: CBCentralManager,
                         didConnect peripheral: CBPeripheral) {
         isConnected = true
+        connectionStatus = "Connected"
         print("Connected to peripheral: \(peripheral.name ?? "unknown")")
         connectionStatus = "Connected to \(peripheral.name ?? "NavDisplay")"
         peripheral.discoverServices([serviceUUID])

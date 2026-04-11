@@ -62,6 +62,24 @@ final class UserStore: ObservableObject {
     func logout() {
         isLoggedIn = false
     }
+    
+    func updatePreferences(
+            safetyAlertCoverage: SafetyAlertCoverage,
+            alertMethods: [AlertMethod]
+        ) {
+            guard var user = currentUser else { return }
+            user.safetyAlertCoverage = safetyAlertCoverage
+            user.alertMethods = alertMethods
+            currentUser = user
+            save(user)
+        }
+    
+    private func save(_ profile: UserProfile) {
+            if let data = try? JSONEncoder().encode(profile) {
+                UserDefaults.standard.set(data, forKey: key)
+            }
+        }
+
 
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: key),

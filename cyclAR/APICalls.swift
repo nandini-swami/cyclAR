@@ -202,21 +202,32 @@ final class APICalls {
         let lower = instruction.lowercased()
 
         if let range = lower.range(of: " onto ") {
-            return String(instruction[range.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
+            var street = String(instruction[range.upperBound...])
+
+            if let stop = street.range(of: " | ") {
+                street = String(street[..<stop.lowerBound])
+            }
+            if let stop = street.lowercased().range(of: " destination ") {
+                street = String(street[..<stop.lowerBound])
+            }
+
+            return street.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         if let range = lower.range(of: " on ") {
-            let afterOn = String(instruction[range.upperBound...])
+            var street = String(instruction[range.upperBound...])
 
-            if let towardRange = afterOn.lowercased().range(of: " toward ") {
-                return String(afterOn[..<towardRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            if let towardRange = street.lowercased().range(of: " toward ") {
+                street = String(street[..<towardRange.lowerBound])
+            }
+            if let destRange = street.lowercased().range(of: " destination ") {
+                street = String(street[..<destRange.lowerBound])
+            }
+            if let stop = street.range(of: " | ") {
+                street = String(street[..<stop.lowerBound])
             }
 
-            if let destRange = afterOn.lowercased().range(of: " destination ") {
-                return String(afterOn[..<destRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
-            }
-
-            return afterOn.trimmingCharacters(in: .whitespacesAndNewlines)
+            return street.trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
         return ""
@@ -236,9 +247,26 @@ final class APICalls {
 
     // Very simple HTML stripper for html_instructions
     private static func stripHTML(_ s: String) -> String {
-        s.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-         .replacingOccurrences(of: "&nbsp;", with: " ")
-         .replacingOccurrences(of: "&amp;", with: "&")
+        var text = s
+
+        // Preserve separators before removing tags
+        text = text.replacingOccurrences(of: "<div[^>]*>", with: " | ", options: .regularExpression)
+        text = text.replacingOccurrences(of: "</div>", with: " ", options: .regularExpression)
+        text = text.replacingOccurrences(of: "<br\\s*/?>", with: " ", options: .regularExpression)
+        text = text.replacingOccurrences(of: "<wbr\\s*/?>", with: "", options: .regularExpression)
+
+        // Remove remaining tags
+        text = text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+
+        // Decode a few common entities
+        text = text.replacingOccurrences(of: "&nbsp;", with: " ")
+        text = text.replacingOccurrences(of: "&amp;", with: "&")
+
+        // Clean spacing around slashes and separators
+        text = text.replacingOccurrences(of: "\\s*/\\s*", with: "/", options: .regularExpression)
+        text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     // formats distance from api call

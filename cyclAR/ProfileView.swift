@@ -13,46 +13,88 @@ struct ProfileView: View {
     @EnvironmentObject var userStore: UserStore
     @State private var showingLogoutConfirm = false
 
+    @State private var selectedCoverage: SafetyAlertCoverage = .medAndHigh
+    @State private var selectedMethods: Set<AlertMethod> = []
+    @State private var savedMessage: String?
+
     var body: some View {
         NavigationView {
             Group {
                 if let user = userStore.currentUser {
                     Form {
-                        // Account
                         Section(header: Text("Account")) {
                             LabeledContent("Name", value: user.name)
                             LabeledContent("Email", value: user.email)
                         }
 
-                        // Safety Coverage
                         Section(header: Text("Road Safety Alert Coverage")) {
-                            HStack {
-                                Image(systemName: "shield.lefthalf.filled")
-                                    .foregroundColor(.orange)
-                                Text(user.safetyAlertCoverage.rawValue)
-                                    .font(.subheadline)
-                            }
-                        }
-
-                        // Alert Methods
-                        Section(header: Text("Alert Methods")) {
-                            ForEach(user.alertMethods, id: \.self) { method in
+                            ForEach(SafetyAlertCoverage.allCases, id: \.self) { option in
                                 HStack {
-                                    Image(systemName: icon(for: method))
-                                        .foregroundColor(.green)
-                                        .frame(width: 24)
-                                    Text(method.rawValue)
+                                    Image(systemName: "shield.lefthalf.filled")
+                                        .foregroundColor(.orange)
+
+                                    Text(option.rawValue)
+
+                                    Spacer()
+
+                                    if selectedCoverage == option {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.green)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedCoverage = option
+                                    savePreferences()
                                 }
                             }
                         }
 
-                        // Helmet
+                        Section(header: Text("Alert Methods")) {
+                            ForEach(AlertMethod.allCases, id: \.self) { method in
+                                HStack {
+                                    Image(systemName: icon(for: method))
+                                        .foregroundColor(.green)
+                                        .frame(width: 24)
+
+                                    Text(method.rawValue)
+
+                                    Spacer()
+
+                                    if selectedMethods.contains(method) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.green)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if selectedMethods.contains(method) {
+                                        // prevent removing the last method
+                                        if selectedMethods.count > 1 {
+                                            selectedMethods.remove(method)
+                                            savePreferences()
+                                        }
+                                    } else {
+                                        selectedMethods.insert(method)
+                                        savePreferences()
+                                    }
+                                }
+                            }
+                        }
+
+                        if let savedMessage {
+                            Section {
+                                Text(savedMessage)
+                                    .foregroundColor(.green)
+                                    .font(.caption)
+                            }
+                        }
+
                         Section(header: Text("Helmet")) {
                             LabeledContent("Connection", value: "cyclAR Helmet")
                             LabeledContent("Firmware", value: "v1.0.0")
                         }
 
-                        // Logout
                         Section {
                             Button(role: .destructive) {
                                 showingLogoutConfirm = true
@@ -64,6 +106,10 @@ struct ProfileView: View {
                                 }
                             }
                         }
+                    }
+                    .onAppear {
+                        selectedCoverage = user.safetyAlertCoverage
+                        selectedMethods = Set(user.alertMethods)
                     }
                 } else {
                     Text("No profile loaded.")
@@ -80,11 +126,29 @@ struct ProfileView: View {
         }
     }
 
+    private func savePreferences() {
+        guard !selectedMethods.isEmpty else { return }
+
+        userStore.updatePreferences(
+            safetyAlertCoverage: selectedCoverage,
+            alertMethods: Array(selectedMethods)
+        )
+
+        savedMessage = "Preferences updated"
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            savedMessage = nil
+        }
+    }
+
     private func icon(for method: AlertMethod) -> String {
         switch method {
-        case .audio:   return "speaker.wave.2"
-        case .display: return "display"
-        case .haptics: return "iphone.radiowaves.left.and.right"
+        case .audio:
+            return "speaker.wave.2"
+        case .display:
+            return "display"
+        case .haptics:
+            return "iphone.radiowaves.left.and.right"
         }
     }
 }
