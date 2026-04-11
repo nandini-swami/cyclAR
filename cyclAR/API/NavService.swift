@@ -1,8 +1,8 @@
 //
-//  APICalls.swift
+//  NavService.swift
 //  cyclAR
 //
-//  Created by Nandini Swami on 11/4/25.
+//  Created by Nandini Swami on 4/11/26.
 //
 
 import Foundation
@@ -11,8 +11,8 @@ import CoreLocation
 
 enum APIError: Error { case invalidURL, noRoutes, network(String), parse }
 
-final class APICalls {
-    static let instance = APICalls()
+final class NavService {
+    static let instance = NavService()
         private init() {}
         private let apiKey = "AIzaSyD9MeMxz_se6k68BnoQdTNLEY4yf_E4xa4"
     

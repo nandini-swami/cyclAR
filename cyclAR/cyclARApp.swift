@@ -22,19 +22,3 @@ struct cyclARApp: App {
         }
     }
 }
-
-struct MainTabView: View {
-    var body: some View {
-        TabView {
-            ContentView()
-                .tabItem {
-                    Label("Navigate", systemImage: "bicycle")
-                }
-
-            ProfileView()
-                .tabItem {
-                    Label("Profile", systemImage: "person.circle")
-                }
-        }
-    }
-}

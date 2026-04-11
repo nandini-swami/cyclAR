@@ -34,7 +34,7 @@ final class NavigationViewModel: ObservableObject {
 
     // MARK: - Preview Route (Text Origin + Destination)
     func previewRoute() {
-        APICalls.instance.getBikeDirections(origin: origin,
+        NavService.instance.getBikeDirections(origin: origin,
                                             destination: destination) { result in
             DispatchQueue.main.async {
                 switch result {
@@ -60,7 +60,7 @@ final class NavigationViewModel: ObservableObject {
                 return
             }
 
-            APICalls.instance.getBikeDirections(origin: current,
+            NavService.instance.getBikeDirections(origin: current,
                                                 destination: self.destination) { result in
                 DispatchQueue.main.async {
                     switch result {
@@ -151,7 +151,7 @@ final class NavigationViewModel: ObservableObject {
 //        print("Simulating Step \(currentStepIndex) (\(step.simple)) -> Sending: \(commandToSend)")
 //        connectionStatus = "Simulating: \(commandToSend)..."
 //
-//        APICalls.instance.sendDataToESP32(message: commandToSend) { result in
+//        NavService.instance.sendDataToESP32(message: commandToSend) { result in
 //            DispatchQueue.main.async {
 //                switch result {
 //                case .success(let response):
