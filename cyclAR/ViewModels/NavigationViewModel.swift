@@ -8,8 +8,8 @@ import SwiftUI
 import CoreLocation
 
 final class NavigationViewModel: ObservableObject {
-    @Published var origin = "Houston Hall, Philadelphia"
-    @Published var destination = "Penn Museum, Philadelphia"
+    @Published var origin = ""
+    @Published var destination = ""
     @Published var steps: [DirectionStep] = []
     @Published var errorMsg: String?
     @Published var demoMode = false
@@ -17,13 +17,27 @@ final class NavigationViewModel: ObservableObject {
     @Published var isSimulating = false
     @Published var liveDisplayStep: DirectionStep?
     
-    // Search autocomplete variables
+    // destination autocomplete
     @Published var destinationSuggestions: [PlaceSuggestion] = []
     @Published var selectedDestinationAddress: String?
     @Published var selectedDestinationPlaceID: String?
 
+    // origin autocomplete
+    @Published var originSuggestions: [PlaceSuggestion] = []
+    @Published var selectedOriginAddress: String?
+    @Published var selectedOriginPlaceID: String?
+
     private var destinationSessionToken = UUID().uuidString
-    private var autocompleteWorkItem: DispatchWorkItem?
+    private var destinationAutocompleteWorkItem: DispatchWorkItem?
+
+    private var originSessionToken = UUID().uuidString
+    private var originAutocompleteWorkItem: DispatchWorkItem?
+    
+    @Published var isEditingOrigin = false
+    @Published var isEditingDestination = false
+    @Published var isSelectingSuggestion = false
+
+    @Published var isLiveNavigating = false
     
     let ble = BLEManager.shared
     let loc = LocationManager()
@@ -33,6 +47,19 @@ final class NavigationViewModel: ObservableObject {
 
     // MARK: - Preview Route (Text Origin + Destination)
     func previewRoute() {
+        let trimmedOrigin = origin.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            guard !trimmedOrigin.isEmpty else {
+                errorMsg = "Please enter start point."
+                return
+            }
+
+            guard !trimmedDestination.isEmpty else {
+                errorMsg = "Please enter destination."
+                return
+            }
+        
         NavService.instance.getBikeDirections(origin: origin,
                                             destination: destination) { result in
             DispatchQueue.main.async {
@@ -49,6 +76,15 @@ final class NavigationViewModel: ObservableObject {
 
     // MARK: - Live Navigation (GPS → Destination)
     func startLiveNavigation() {
+        let trimmedDestination = destination.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmedDestination.isEmpty else {
+            errorMsg = "Please enter destination."
+            return
+        }
+
+        errorMsg = nil
+        isLiveNavigating = true
         navTimer?.invalidate()
 
         navTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { _ in
@@ -60,26 +96,18 @@ final class NavigationViewModel: ObservableObject {
             }
 
             NavService.instance.getBikeDirections(origin: current,
-                                                destination: self.destination) { result in
+                                                  destination: trimmedDestination) { result in
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let newSteps):
                         self.errorMsg = nil
-                            self.steps = newSteps
-                            self.liveDisplayStep = newSteps.first
-                            
-                            if let stepToDisplay = self.liveDisplayStep {
-                                self.sendStepOverBLE(stepToDisplay)
-                            }
+                        self.steps = newSteps
+                        self.liveDisplayStep = newSteps.first
 
-                            print("LIVE NAV UPDATE")
-                            for (idx, step) in newSteps.enumerated() {
-                                print("[\(idx)] \(step.simple) | \(step.streetName) | \(step.distanceText)")
-                            }
+                        if let stepToDisplay = self.liveDisplayStep {
+                            self.sendStepOverBLE(stepToDisplay)
+                        }
 
-                            if let stepToDisplay = self.liveDisplayStep {
-                                print("DISPLAY PREVIEW -> \(stepToDisplay.simple) | \(stepToDisplay.distanceText) | \(stepToDisplay.streetName)")
-                            }
                     case .failure(let e):
                         self.errorMsg = e.localizedDescription
                     }
@@ -90,8 +118,10 @@ final class NavigationViewModel: ObservableObject {
 
     func stopLiveNavigation() {
         navTimer?.invalidate()
-            navTimer = nil
-            liveDisplayStep = nil
+        navTimer = nil
+        liveDisplayStep = nil
+        steps = []
+        isLiveNavigating = false
     }
 
     // MARK: - Manual Send Functions
@@ -130,33 +160,6 @@ final class NavigationViewModel: ObservableObject {
         }
     }
 
-    // old http version
-//    func sendCurrentStep() {
-//        let step = steps[currentStepIndex]
-//
-//        let direction = step.simple.lowercased()
-//        var commandToSend = "up"
-//
-//        if direction.contains("left") {
-//            commandToSend = "left"
-//        } else if direction.contains("right") {
-//            commandToSend = "right"
-//        }
-//
-//        print("Simulating Step \(currentStepIndex) (\(step.simple)) -> Sending: \(commandToSend)")
-//        connectionStatus = "Simulating: \(commandToSend)..."
-//
-//        NavService.instance.sendDataToESP32(message: commandToSend) { result in
-//            DispatchQueue.main.async {
-//                switch result {
-//                case .success(let response):
-//                    self.connectionStatus = "Sent: \(commandToSend) (\(response))"
-//                case .failure(let error):
-//                    self.connectionStatus = "Err: \(error.localizedDescription)"
-//                }
-//            }
-//        }
-//    }
     func sendCurrentStep() {
         let step = steps[currentStepIndex]
         sendStepOverBLE(step)
@@ -194,12 +197,12 @@ final class NavigationViewModel: ObservableObject {
         ble.sendNavUpdate(street: street, arrow: arrow, distance: distance)
     }
     
-    // Autocomplete functions
+    // MARK: - Destination autocomplete
     func destinationTextChanged(_ newValue: String) {
         selectedDestinationAddress = nil
         selectedDestinationPlaceID = nil
 
-        autocompleteWorkItem?.cancel()
+        destinationAutocompleteWorkItem?.cancel()
 
         let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -226,18 +229,74 @@ final class NavigationViewModel: ObservableObject {
             }
         }
 
-        autocompleteWorkItem = workItem
+        destinationAutocompleteWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.30, execute: workItem)
     }
 
     func selectDestinationSuggestion(_ suggestion: PlaceSuggestion) {
+        isSelectingSuggestion = true
+        isEditingDestination = false
+
         destination = suggestion.fullText
         selectedDestinationAddress = suggestion.fullText
         selectedDestinationPlaceID = suggestion.id
         destinationSuggestions = []
-
-        // start a new session next time user begins typing again
         destinationSessionToken = UUID().uuidString
+
+        DispatchQueue.main.async {
+            self.isSelectingSuggestion = false
+        }
+    }
+    
+    // MARK: - Origin autocomplete
+    func originTextChanged(_ newValue: String) {
+        selectedOriginAddress = nil
+        selectedOriginPlaceID = nil
+
+        originAutocompleteWorkItem?.cancel()
+
+        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard trimmed.count >= 3 else {
+            originSuggestions = []
+            return
+        }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+
+            PlacesService.shared.fetchSuggestions(
+                input: trimmed,
+                sessionToken: self.originSessionToken
+            ) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let suggestions):
+                        self.originSuggestions = suggestions
+                    case .failure:
+                        self.originSuggestions = []
+                    }
+                }
+            }
+        }
+
+        originAutocompleteWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.30, execute: workItem)
+    }
+
+    func selectOriginSuggestion(_ suggestion: PlaceSuggestion) {
+        isSelectingSuggestion = true
+        isEditingOrigin = false
+        
+        origin = suggestion.fullText
+        selectedOriginAddress = suggestion.fullText
+        selectedOriginPlaceID = suggestion.id
+        originSuggestions = []
+        originSessionToken = UUID().uuidString
+        
+        DispatchQueue.main.async {
+            self.isSelectingSuggestion = false
+        }
     }
 
 }

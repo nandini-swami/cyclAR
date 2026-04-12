@@ -115,12 +115,27 @@ struct DemoRouteInputSection: View {
                 .padding(.bottom, 8)
 
             // Origin
-            RouteInputRow(
-                icon: "circle.fill",
-                iconColor: .textMuted,
-                placeholder: "Start location",
-                text: $vm.origin
-            )
+            VStack(alignment: .leading, spacing: 0) {
+                RouteInputRow(
+                    icon: "circle.fill",
+                    iconColor: .textMuted,
+                    placeholder: "Type start point",
+                    text: $vm.origin,
+                    onChanged: {
+                        guard !vm.isSelectingSuggestion else { return }
+                            vm.isEditingOrigin = true
+                            vm.originTextChanged($0)
+                    }
+                )
+
+                if vm.isEditingOrigin && !vm.originSuggestions.isEmpty {
+                    PlaceAutocompleteDrop(
+                        suggestions: vm.originSuggestions,
+                        onSelect: vm.selectOriginSuggestion
+                    )
+                    .padding(.top, 4)
+                }
+            }
 
             // Dashed connector
             HStack {
@@ -136,19 +151,25 @@ struct DemoRouteInputSection: View {
                 RouteInputRow(
                     icon: "mappin.circle.fill",
                     iconColor: .brand,
-                    placeholder: "Destination",
+                    placeholder: "Type destination",
                     text: $vm.destination,
-                    onChanged: { vm.destinationTextChanged($0) }
+                    onChanged: {
+                        guard !vm.isSelectingSuggestion else { return }
+                        vm.isEditingDestination = true
+                        vm.destinationTextChanged($0)
+                    }
                 )
-                if !vm.destinationSuggestions.isEmpty {
-                    AutocompleteDrop(vm: vm)
-                        .padding(.top, 4)
+
+                if vm.isEditingDestination && !vm.destinationSuggestions.isEmpty {
+                    PlaceAutocompleteDrop(
+                        suggestions: vm.destinationSuggestions,
+                        onSelect: vm.selectDestinationSuggestion
+                    )
+                    .padding(.top, 4)
                 }
             }
 
-            // Action buttons
             HStack(spacing: 10) {
-                // Preview route
                 Button {
                     vm.previewRoute()
                 } label: {
@@ -162,7 +183,6 @@ struct DemoRouteInputSection: View {
                 }
                 .disabled(vm.isSimulating)
 
-                // Send to visor / Stop
                 if !vm.steps.isEmpty {
                     Button {
                         if vm.isSimulating { vm.stopSimulation() }
@@ -191,7 +211,6 @@ struct DemoRouteInputSection: View {
             }
             .padding(.top, 12)
 
-            // Simulation progress bar
             if vm.isSimulating && !vm.steps.isEmpty {
                 SimProgressBar(
                     current: vm.currentStepIndex,
