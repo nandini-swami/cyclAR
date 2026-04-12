@@ -8,13 +8,12 @@
 import SwiftUI
  
 struct CyclARNavBar: View {
-    let connectionStatus: String
+    @ObservedObject var ble = BLEManager.shared
     let demoMode: Bool
- 
+    
     private var isConnected: Bool {
-        connectionStatus.lowercased().contains("connect") &&
-        !connectionStatus.lowercased().contains("not")
-    }
+            ble.isConnected
+        }
  
     var body: some View {
         HStack(alignment: .center, spacing: 10) {

@@ -17,7 +17,7 @@ struct DemoView: View {
         VStack(spacing: 0) {
 
             // ── NAV BAR (demo pill always visible here) ──────────────
-            CyclARNavBar(connectionStatus: vm.connectionStatus, demoMode: true)
+            CyclARNavBar(demoMode: true)
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {

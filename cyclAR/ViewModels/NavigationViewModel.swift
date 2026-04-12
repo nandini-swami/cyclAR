@@ -13,7 +13,6 @@ final class NavigationViewModel: ObservableObject {
     @Published var steps: [DirectionStep] = []
     @Published var errorMsg: String?
     @Published var demoMode = false
-    @Published var connectionStatus = "Not Connected"
     @Published var currentStepIndex = 0
     @Published var isSimulating = false
     @Published var liveDisplayStep: DirectionStep?
@@ -98,17 +97,14 @@ final class NavigationViewModel: ObservableObject {
     // MARK: - Manual Send Functions
     func sendLeft() {
         ble.sendNavUpdate(street: "", arrow: "←", distance: "")
-        connectionStatus = ble.connectionStatus
     }
 
     func sendRight() {
         ble.sendNavUpdate(street: "", arrow: "→", distance: "")
-        connectionStatus = ble.connectionStatus
     }
 
     func sendUp() {
         ble.sendNavUpdate(street: "", arrow: "↑", distance: "")
-        connectionStatus = ble.connectionStatus
     }
 
     // MARK: - Simulation Logic
@@ -130,7 +126,6 @@ final class NavigationViewModel: ObservableObject {
                 self.sendCurrentStep()
             } else {
                 self.stopSimulation()
-                self.connectionStatus = "Simulation Complete"
             }
         }
     }
@@ -173,17 +168,6 @@ final class NavigationViewModel: ObservableObject {
         isSimulating = false
         print("Simulation Stopped")
     }
-
-    func handleResult(_ result: Result<String, Error>) {
-        DispatchQueue.main.async {
-            switch result {
-            case .success(let response):
-                self.connectionStatus = "Success: \(response)"
-            case .failure(let error):
-                self.connectionStatus = "Error: \(error.localizedDescription)"
-            }
-        }
-    }
     private func arrowForStep(_ step: DirectionStep) -> String {
         let text = step.simple.lowercased()
 
@@ -208,7 +192,6 @@ final class NavigationViewModel: ObservableObject {
         let distance = step.distanceText
 
         ble.sendNavUpdate(street: street, arrow: arrow, distance: distance)
-        connectionStatus = ble.connectionStatus
     }
     
     // Autocomplete functions

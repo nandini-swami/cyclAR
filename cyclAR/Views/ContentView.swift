@@ -11,7 +11,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
 
-            CyclARNavBar(connectionStatus: vm.connectionStatus, demoMode: false)
+            CyclARNavBar(demoMode: false)
 
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 0) {
