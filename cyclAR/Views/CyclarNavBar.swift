@@ -91,10 +91,21 @@ struct RouteInputRow: View {
                 .font(.system(size: 14))
                 .foregroundColor(iconColor)
                 .frame(width: 20)
-            TextField(placeholder, text: $text)
-                .font(.cyclARBody)
-                .foregroundColor(.appBlack)
-                .onChange(of: text) { newVal in onChanged?(newVal) }
+
+            ZStack(alignment: .leading) {
+                if text.isEmpty {
+                    Text(placeholder)
+                        .font(.cyclARBody)
+                        .foregroundColor(.textSecondary)
+                }
+
+                TextField("", text: $text)
+                    .font(.cyclARBody)
+                    .foregroundColor(.appBlack)
+                    .onChange(of: text) { newVal in
+                        onChanged?(newVal)
+                    }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)

@@ -69,20 +69,34 @@ final class BLEManager: NSObject, ObservableObject {
         guard let piPeripheral,
               let commandCharacteristic else {
             connectionStatus = "Not ready to send config"
+            print("not ready to send")
             return
         }
 
         let payload = ConfigPayload(
-                alertCoverage: coverage.rawValue,
-                alertMethods: alertMethods.map(\.rawValue)
+                displayEnabled: alertMethods.contains(.display),
+                hapticsEnabled: alertMethods.contains(.haptics),
+                dangerMode: coverage == .medAndHigh ? "med_and_high" : "high_only"
             )
+        
+        print("(app side) config payload:")
+        print("  displayEnabled: \(payload.displayEnabled)")
+        print("  hapticsEnabled: \(payload.hapticsEnabled)")
+        print("  alertMethods: \(payload.dangerMode)")
+
 
         do {
             let data = try JSONEncoder().encode(payload)
+            
+            if let jsonString = String(data: data, encoding: .utf8) {
+                        print("  raw json: \(jsonString)")
+                    }
+            
             piPeripheral.writeValue(data, for: commandCharacteristic, type: .withResponse)
             connectionStatus = "Sent config update"
         } catch {
             connectionStatus = "Config JSON encode failed"
+                    print("Config JSON encode failed: \(error.localizedDescription)")
         }
     }
 

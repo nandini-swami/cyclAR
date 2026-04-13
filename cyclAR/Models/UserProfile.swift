@@ -9,7 +9,7 @@ import Foundation
 struct UserProfile: Codable {
     var name: String
     var email: String
-    var password: String              // FIX 1: added so login can validate it
+    var password: String
     var safetyAlertCoverage: SafetyAlertCoverage
     var alertMethods: [AlertMethod]
 }

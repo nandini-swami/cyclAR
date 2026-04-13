@@ -36,8 +36,10 @@ final class NavigationViewModel: ObservableObject {
     @Published var isEditingOrigin = false
     @Published var isEditingDestination = false
     @Published var isSelectingSuggestion = false
-
+    
+    // loading
     @Published var isLiveNavigating = false
+    @Published var isLoadingLiveRoute = false
     
     let ble = BLEManager.shared
     let loc = LocationManager()
@@ -84,13 +86,15 @@ final class NavigationViewModel: ObservableObject {
         }
 
         errorMsg = nil
-        isLiveNavigating = true
+        isLoadingLiveRoute = true
+        isLiveNavigating = false
         navTimer?.invalidate()
 
-        navTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { _ in
+        func fetchRouteAndUpdate() {
             guard let current = self.loc.current else {
                 DispatchQueue.main.async {
                     self.errorMsg = "Waiting for GPS..."
+                    self.isLoadingLiveRoute = false
                 }
                 return
             }
@@ -103,6 +107,8 @@ final class NavigationViewModel: ObservableObject {
                         self.errorMsg = nil
                         self.steps = newSteps
                         self.liveDisplayStep = newSteps.first
+                        self.isLoadingLiveRoute = false
+                        self.isLiveNavigating = true
 
                         if let stepToDisplay = self.liveDisplayStep {
                             self.sendStepOverBLE(stepToDisplay)
@@ -110,18 +116,29 @@ final class NavigationViewModel: ObservableObject {
 
                     case .failure(let e):
                         self.errorMsg = e.localizedDescription
+                        self.isLoadingLiveRoute = false
+                        self.isLiveNavigating = false
                     }
                 }
             }
         }
-    }
 
+        // first fetch immediately
+        fetchRouteAndUpdate()
+
+        // then keep polling
+        navTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: true) { _ in
+            fetchRouteAndUpdate()
+        }
+    }
+    
     func stopLiveNavigation() {
         navTimer?.invalidate()
         navTimer = nil
         liveDisplayStep = nil
         steps = []
         isLiveNavigating = false
+        isLoadingLiveRoute = false
     }
 
     // MARK: - Manual Send Functions

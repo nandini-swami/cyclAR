@@ -15,6 +15,7 @@ struct NavPayload: Codable {
 
 struct ConfigPayload: Codable {
     let type: String = "config"
-    let alertCoverage: String
-    let alertMethods: [String]
+    let displayEnabled: Bool
+    let hapticsEnabled: Bool
+    let dangerMode: String
 }

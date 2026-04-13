@@ -63,7 +63,7 @@ struct LiveRouteInputSection: View {
                 RouteInputRow(
                     icon: "mappin.circle.fill",
                     iconColor: .brand,
-                    placeholder: "Type destination",
+                    placeholder: "Where to?",
                     text: $vm.destination,
                     onChanged: {
                         guard !vm.isSelectingSuggestion else { return }
@@ -84,18 +84,19 @@ struct LiveRouteInputSection: View {
             Button {
                 if vm.isLiveNavigating {
                     vm.stopLiveNavigation()
-                } else {
+                } else if !vm.isLoadingLiveRoute {
                     vm.startLiveNavigation()
                 }
             } label: {
-                Text(vm.isLiveNavigating ? "Stop" : "Go")
+                Text(vm.isLoadingLiveRoute ? "Loading..." : (vm.isLiveNavigating ? "Stop" : "Go"))
                     .font(.cyclARHeadline)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 13)
-                    .background(vm.isLiveNavigating ? Color.appBlack : Color.brand)
+                    .background(vm.isLoadingLiveRoute ? Color.textMuted : (vm.isLiveNavigating ? Color.appBlack : Color.brand))
                     .cornerRadius(12)
             }
+            .disabled(vm.isLoadingLiveRoute)
             .padding(.top, 12)
         }
     }
