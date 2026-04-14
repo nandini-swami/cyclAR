@@ -45,8 +45,11 @@ final class BLEManager: NSObject, ObservableObject {
 
     func sendNavUpdate(street: String, arrow: String, distance: String) {
         guard let piPeripheral,
-              let commandCharacteristic else {
+              let commandCharacteristic,
+              piPeripheral.state == .connected else {
+            print(piPeripheral?.state)
             connectionStatus = "Not ready to send"
+            print("not ready to send")
             return
         }
 
@@ -67,7 +70,8 @@ final class BLEManager: NSObject, ObservableObject {
     
     func sendConfigUpdate(coverage: SafetyAlertCoverage, alertMethods: [AlertMethod]) {
         guard let piPeripheral,
-              let commandCharacteristic else {
+              let commandCharacteristic,
+              piPeripheral.state == .connected else {
             connectionStatus = "Not ready to send config"
             print("not ready to send")
             return
@@ -93,6 +97,7 @@ final class BLEManager: NSObject, ObservableObject {
                     }
             
             piPeripheral.writeValue(data, for: commandCharacteristic, type: .withResponse)
+            print("sent from config func")
             connectionStatus = "Sent config update"
         } catch {
             connectionStatus = "Config JSON encode failed"
@@ -151,15 +156,20 @@ extension BLEManager: CBCentralManagerDelegate {
                         didFailToConnect peripheral: CBPeripheral,
                         error: Error?) {
         isConnected = false
-        connectionStatus = "Connect failed"
+        piPeripheral = nil
+        commandCharacteristic = nil
+        connectionStatus = "Connect failed - retrying..."
+        startScanning()
     }
 
     func centralManager(_ central: CBCentralManager,
                         didDisconnectPeripheral peripheral: CBPeripheral,
                         error: Error?) {
         isConnected = false
+        piPeripheral = nil
         commandCharacteristic = nil
-        connectionStatus = "Disconnected"
+        connectionStatus = "Disconnected - reconnecting..."
+        startScanning()
     }
 }
 
@@ -195,7 +205,12 @@ extension BLEManager: CBPeripheralDelegate {
                     didWriteValueFor characteristic: CBCharacteristic,
                     error: Error?) {
         if let error {
+            print("BLE write failed: \(error.localizedDescription)")
             connectionStatus = "Write failed: \(error.localizedDescription)"
+            isConnected = false
+            piPeripheral = nil
+            commandCharacteristic = nil
+            startScanning()
         }
     }
 }
