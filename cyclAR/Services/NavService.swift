@@ -70,7 +70,9 @@ final class NavService {
                             return completion(.failure(APIError.noRoutes))
                         }
 
-                        let mapped: [DirectionStep] = steps.compactMap { step in
+                        var mapped: [DirectionStep] = []
+                        
+                        for step in steps {
                             let nav = step["navigationInstruction"] as? [String: Any]
                             let html = (nav?["instructions"] as? String) ?? ""
                             let plain = Self.stripHTML(html)
@@ -80,23 +82,37 @@ final class NavService {
 
                             let meters = step["distanceMeters"] as? Double ?? 0
                             let distanceText = Self.formatDistance(meters)
-                            
-                            let streetName = Self.extractStreetName(from: plain)
-                            
-                            print("STEP DEBUG")
-                            print("  maneuver: \(maneuver)")
-                            print("  simple: \(simple)")
-                            print("  instruction: \(plain)")
-                            print("  street: \(streetName)")
-                            print("  distance: \(distanceText)")
 
-                            return DirectionStep(
-                                rawInstruction: plain,
-                                maneuver: maneuver,
-                                simple: simple,
-                                distanceText: distanceText,
-                                streetName: streetName
+                            let split = Self.splitInstructionAndArrival(from: plain)
+
+                            let navInstruction = split.main
+                            let arrivalInstruction = split.arrival
+
+                            let streetName = Self.extractStreetName(from: navInstruction)
+
+                            mapped.append(
+                                DirectionStep(
+                                    rawInstruction: navInstruction,
+                                    maneuver: maneuver,
+                                    simple: simple,
+                                    distanceText: distanceText,
+                                    streetName: streetName,
+                                    isArrival: false
+                                )
                             )
+
+                            if let arrivalInstruction {
+                                mapped.append(
+                                    DirectionStep(
+                                        rawInstruction: arrivalInstruction,
+                                        maneuver: "ARRIVE",
+                                        simple: "ARRIVE",
+                                        distanceText: "",
+                                        streetName: "",
+                                        isArrival: true
+                                    )
+                                )
+                            }
                         }
 
                         completion(.success(mapped))
@@ -166,8 +182,9 @@ final class NavService {
                           let steps = firstLeg["steps"] as? [[String: Any]] else {
                         return completion(.failure(APIError.noRoutes))
                     }
+                    var mapped: [DirectionStep] = []
 
-                    let mapped: [DirectionStep] = steps.compactMap { step in
+                    for step in steps {
                         let nav = step["navigationInstruction"] as? [String: Any]
                         let html = (nav?["instructions"] as? String) ?? ""
                         let plain = Self.stripHTML(html)
@@ -177,15 +194,37 @@ final class NavService {
 
                         let meters = step["distanceMeters"] as? Double ?? 0
                         let distanceText = Self.formatDistance(meters)
-                        let streetName = Self.extractStreetName(from: plain)
 
-                        return DirectionStep(
-                            rawInstruction: plain,
-                            maneuver: maneuver,
-                            simple: simple,
-                            distanceText: distanceText,
-                            streetName: streetName
+                        let split = Self.splitInstructionAndArrival(from: plain)
+
+                        let navInstruction = split.main
+                        let arrivalInstruction = split.arrival
+
+                        let streetName = Self.extractStreetName(from: navInstruction)
+
+                        mapped.append(
+                            DirectionStep(
+                                rawInstruction: navInstruction,
+                                maneuver: maneuver,
+                                simple: simple,
+                                distanceText: distanceText,
+                                streetName: streetName,
+                                isArrival: false
+                            )
                         )
+
+                        if let arrivalInstruction {
+                            mapped.append(
+                                DirectionStep(
+                                    rawInstruction: arrivalInstruction,
+                                    maneuver: "ARRIVE",
+                                    simple: "ARRIVE",
+                                    distanceText: "",
+                                    streetName: "",
+                                    isArrival: true
+                                )
+                            )
+                        }
                     }
 
                     completion(.success(mapped))
@@ -277,5 +316,26 @@ final class NavService {
             let miles = feet / 5280
             return String(format: "%.1f mi", miles)
         }
+    }
+    
+    private static func splitInstructionAndArrival(from instruction: String) -> (main: String, arrival: String?) {
+        let lower = instruction.lowercased()
+
+        guard let range = lower.range(of: "destination will be on the") ??
+                          lower.range(of: "you have arrived") ??
+                          lower.range(of: "arrive at") else {
+            return (instruction.trimmingCharacters(in: .whitespacesAndNewlines), nil)
+        }
+
+        let startIndex = range.lowerBound
+        var main = String(instruction[..<startIndex])
+        var arrival = String(instruction[startIndex...])
+
+        main = main.replacingOccurrences(of: "\\|\\s*$", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        arrival = arrival.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return (main, arrival.isEmpty ? nil : arrival)
     }
 }

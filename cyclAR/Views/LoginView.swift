@@ -34,7 +34,7 @@ struct LoginView: View {
                         }
  
                         HStack(spacing: 0) {
-                            Text("Cycl")
+                            Text("cycl")
                                 .font(.cyclARLargeTitle)
                                 .foregroundColor(.appBlack)
                             Text("AR")

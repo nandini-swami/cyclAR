@@ -14,4 +14,5 @@ struct DirectionStep: Identifiable {
     let simple: String
     let distanceText: String
     let streetName: String
+    let isArrival: Bool
 }

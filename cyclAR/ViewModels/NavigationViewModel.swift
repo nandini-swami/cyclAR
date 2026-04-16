@@ -179,6 +179,7 @@ final class NavigationViewModel: ObservableObject {
 
     func sendCurrentStep() {
         let step = steps[currentStepIndex]
+        guard !step.isArrival else { return }
         sendStepOverBLE(step)
     }
 
@@ -207,6 +208,8 @@ final class NavigationViewModel: ObservableObject {
     }
 
     func sendStepOverBLE(_ step: DirectionStep) {
+        guard !step.isArrival else { return }
+
         let street = step.streetName
         let arrow = arrowForStep(step)
         let distance = step.distanceText
